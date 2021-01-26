@@ -1,0 +1,40 @@
+version: '3.7'
+
+services:
+  web:
+    build: ./
+    command: python manage.py runserver 0.0.0.0:8080
+    volumes:
+      - ./:/usr/src/app/
+    ports:
+      - 1337:8080
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=sfhmj7o=r_(h#*r+(mi6e+1n%+exs83q7dw-cr81t3&aa%@=d7
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+    depends_on:
+      - redis
+  redis:
+    image: redis:alpine
+  celery:
+    build: ./
+    command: celery -A app worker -l info
+    volumes:
+      - ./:/usr/src/app/
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=sfhmj7o=r_(h#*r+(mi6e+1n%+exs83q7dw-cr81t3&aa%@=d7
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+    depends_on:
+      - redis
+  celery-beat:
+    build: ./
+    command: celery -A app beat -l info
+    volumes:
+      - ./:/usr/src/app/
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=sfhmj7o=r_(h#*r+(mi6e+1n%+exs83q7dw-cr81t3&aa%@=d7
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+    depends_on:
+      - redis

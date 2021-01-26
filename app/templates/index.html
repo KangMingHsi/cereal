@@ -1,0 +1,147 @@
+<html>
+  <head>
+    {% csrf_token %}
+    <title>Test</title>
+    <style>
+      .table {
+        border: 1px solid;
+      }
+      .table th{
+        border: 1px solid;
+      }
+      .table td{
+        border: 1px solid;
+      }
+      .table-bordered-custom {
+        border:0px;
+        border-top:initial;
+      }
+      .table-bordered-custom thead th {
+        border-top:1px solid #ddd !important;
+        border-left:1px solid #ddd !important;
+      }
+      .table-bordered-custom tbody td {
+        border:1px solid #ddd !important;
+      }
+      .table-bordered-custom tbody td:last-child {
+        border:0 !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="add_order_block">
+      <select name="products">
+        <option value="" disabled selected>Select Product</option>
+        {% for product in products %}
+          <option value={{ product.product_id }}>{{ product.product_id }}</option>
+        {% endfor %}
+      </select>
+      <input type="number" min="0" placeholder="數量">
+      <input type="button" value="+" onclick="addOrder()">
+      <input type="number" placeholder="Customer ID">
+      <br>
+      <input type="checkbox" name="vip">
+      <label for="vip">是否為vip身份</label>
+    </div>
+
+    <p>商品列表</p>
+    <table style="margin:10px" class="table">
+      <tr>
+        <th>Product ID</th>
+        <th>stock_pcs</th>
+        <th>price</th>
+        <th>shop_id</th>
+        <th>vip</th>
+      </tr>
+      {% for product in products %}
+        <tr>
+          <td>{{ product.product_id }}</td>
+          <td>{{ product.stock_pcs }}</td>
+          <td>{{ product.price }}</td>
+          <td>{{ product.shop_id }}</td>
+          <td><input type="checkbox" {% if product.vip %} checked {% endif %} disabled="true"></td>
+        </tr>
+      {% endfor %}
+    </table>
+    <p>訂單記錄</p>
+    <table style="margin:10px" class="table-bordered-custom">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>product_id</th>
+          <th>qty</th>
+          <th>price</th>
+          <th>shop_id</th>
+          <th>Customer ID</th>
+          <th style="border-top:0 !important"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+          <tr id="order_{{ order.id }}">
+            <td>{{ order.id }}</td>
+            <td>{{ order.product.product_id }}</td>
+            <td>{{ order.qty }}</td>
+            <td>{{ order.price }}</td>
+            <td>{{ order.shop_id }}</td>
+            <td>{{ order.customer_id }}</td>
+            <td><input type="button" value="-" onclick="deleteOrder({{ order.id }})"></td>
+          </tr>
+        {% endfor %}
+      <tbody>
+    </table>
+    <input type="button" value="Top3" onclick="topThree()">
+
+    <script>
+      function createAjax(method, url, data) {
+        let xhttp = new XMLHttpRequest();
+        let token = document.getElementsByName('csrfmiddlewaretoken')[0].value;
+        xhttp.onreadystatechange = function () {
+          if (xhttp.readyState == 4) {
+            if (xhttp.responseText !== "") {
+              alert(xhttp.responseText)
+              if (xhttp.status == 200) {
+                location.reload()
+              }
+            }
+          }
+        };
+        xhttp.open(method, url, true);
+        xhttp.setRequestHeader('Content-Type', 'application/json');
+        xhttp.setRequestHeader('X-CSRFToken', token);
+        xhttp.send(JSON.stringify(data));
+      }
+
+      function addOrder() {
+        var block = document.getElementById("add_order_block");
+        let data = {
+          'product_id': block.children[0].value,
+          'qty': block.children[1].value,
+          'customer_id': block.children[3].value,
+          'vip': block.children[5].checked,
+        };
+        createAjax("POST", "add_order/", data);
+      }
+
+      function deleteOrder(orderId) {
+        console.log("deleteOrder");
+        var block = document.getElementById("order_" + orderId);
+        let data = {
+          'order_id': orderId,
+          'product_id': parseInt(block.children[1].innerText),
+          'qty': parseInt(block.children[2].innerText),
+          'price': parseInt(block.children[3].innerText),
+          'shop_id': block.children[4].innerText,
+          'customer_id': parseInt(block.children[5].innerText),
+        };
+        createAjax("DELETE", "delete_order/", data);
+      }
+
+      function topThree() {
+        console.log("topThree");
+        createAjax("GET", "top_three/", {});
+      }
+
+    </script>
+  </body>
+</html>
